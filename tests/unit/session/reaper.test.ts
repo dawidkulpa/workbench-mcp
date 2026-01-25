@@ -102,14 +102,14 @@ describe('SessionReaper', () => {
       reaper = createSessionReaper(manager, { intervalMs: 1000 });
 
       // Create session
-      await manager.getOrCreate('conv-1');
+      const session = await manager.getOrCreate('conv-1');
       expect(manager.size).toBe(1);
 
       // Advance time but not past timeout
       vi.advanceTimersByTime(50); // 50ms < 100ms timeout
 
       // Touch session to keep it active
-      manager.get('conv-1').touch();
+      session.touch();
 
       // Advance a bit more
       vi.advanceTimersByTime(50);
