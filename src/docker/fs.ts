@@ -121,9 +121,9 @@ export async function listDirInContainer(
   // Validate path is within workspace
   const validatedPath = validateWorkspacePath(dirPath);
 
-  // Use ls with specific format for parsing
+  // Use ls with --full-time for BusyBox/Alpine compatibility
   const exec = await container.exec({
-    Cmd: ['ls', '-la', '--time-style=iso', validatedPath],
+    Cmd: ['ls', '-la', '--full-time', validatedPath],
     AttachStdout: true,
     AttachStderr: true,
     Tty: false,
@@ -158,7 +158,8 @@ export async function listDirInContainer(
 }
 
 /**
- * Parse ls -la output into FileEntry array.
+ * Parse ls -la --full-time output into FileEntry array.
+ * BusyBox format: -rw-r--r-- 1 node node 123 2024-01-15 10:30:00 +0000 filename
  */
 function parseLsOutput(output: string): FileEntry[] {
   const entries: FileEntry[] = [];
@@ -168,18 +169,18 @@ function parseLsOutput(output: string): FileEntry[] {
     // Skip header line (total ...)
     if (line.startsWith('total ')) continue;
 
-    // Parse ls -la format:
-    // -rw-r--r-- 1 node node 123 2024-01-15 10:30 filename
-    // drwxr-xr-x 2 node node 4096 2024-01-15 10:30 dirname
+    // Parse ls -la --full-time format:
+    // -rw-r--r-- 1 node node 123 2024-01-15 10:30:00 +0000 filename
+    // drwxr-xr-x 2 node node 4096 2024-01-15 10:30:00 +0000 dirname
     const parts = line.trim().split(/\s+/);
-    if (parts.length < 8) continue;
+    if (parts.length < 9) continue;
 
     const permissions = parts[0];
     const size = parseInt(parts[4] ?? '0', 10);
     const date = parts[5];
     const time = parts[6];
-    // Name might contain spaces, so join the rest
-    const name = parts.slice(7).join(' ');
+    // Skip timezone (parts[7]) and get name (might contain spaces)
+    const name = parts.slice(8).join(' ');
 
     // Skip . and ..
     if (name === '.' || name === '..') continue;

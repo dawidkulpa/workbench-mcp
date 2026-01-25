@@ -6,8 +6,10 @@ import {
   DockerClient,
   createDockerClient,
   createSandbox,
+  createProxy,
   createSessionNetwork,
   type SandboxContainer,
+  type ProxyContainer,
   type DockerNetwork,
 } from '../docker/index.js';
 
@@ -32,10 +34,19 @@ export class DockerSessionFactory implements SessionFactory {
   async create(conversationId: string, config: Config): Promise<Session> {
     let network: DockerNetwork | undefined;
     let sandbox: SandboxContainer | undefined;
+    let proxy: ProxyContainer | undefined;
 
     try {
       // Create isolated network
       network = await createSessionNetwork(this.dockerClient, { conversationId });
+
+      // Create proxy sidecar first (sandbox needs to connect to it)
+      proxy = await createProxy(this.dockerClient, {
+        conversationId,
+        image: config.docker.proxyImage,
+        networkId: network.id,
+        allowlist: config.proxy.allowlist,
+      });
 
       // Create sandbox container
       sandbox = await createSandbox(this.dockerClient, {
@@ -59,10 +70,7 @@ export class DockerSessionFactory implements SessionFactory {
           return lastActivityAt;
         },
         sandbox,
-        // Proxy will be added in Phase 3
-        proxy: {
-          containerId: '',
-        },
+        proxy,
         network,
         touch() {
           lastActivityAt = Date.now();
@@ -72,9 +80,15 @@ export class DockerSessionFactory implements SessionFactory {
           try {
             await sandbox?.destroy();
           } catch {
-            // Continue with network cleanup even if sandbox destroy fails
+            // Continue with cleanup even if sandbox destroy fails
           }
-          // Then destroy network
+          // Then destroy proxy
+          try {
+            await proxy?.destroy();
+          } catch {
+            // Continue with network cleanup even if proxy destroy fails
+          }
+          // Finally destroy network
           try {
             await network?.destroy();
           } catch {
@@ -89,6 +103,13 @@ export class DockerSessionFactory implements SessionFactory {
       if (sandbox) {
         try {
           await sandbox.destroy();
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
+      if (proxy) {
+        try {
+          await proxy.destroy();
         } catch {
           // Ignore cleanup errors
         }
@@ -146,6 +167,15 @@ export class MockSessionFactory implements SessionFactory {
       },
     };
 
+    // Create mock proxy
+    const mockProxy: ProxyContainer = {
+      containerId: `proxy-${conversationId}`,
+      container: {} as ProxyContainer['container'],
+      destroy() {
+        return Promise.resolve();
+      },
+    };
+
     // Create mock network
     const mockNetwork: DockerNetwork = {
       id: `network-${conversationId}`,
@@ -163,9 +193,7 @@ export class MockSessionFactory implements SessionFactory {
         return lastActivityAt;
       },
       sandbox: mockSandbox,
-      proxy: {
-        containerId: `proxy-${conversationId}`,
-      },
+      proxy: mockProxy,
       network: mockNetwork,
       touch() {
         lastActivityAt = Date.now();

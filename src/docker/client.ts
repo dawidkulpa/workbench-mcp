@@ -19,6 +19,16 @@ export interface DockerClientOptions {
 }
 
 /**
+ * Get the default Docker socket path for the current platform.
+ */
+function getDefaultSocketPath(): string {
+  if (process.platform === 'win32') {
+    return '//./pipe/docker_engine';
+  }
+  return '/var/run/docker.sock';
+}
+
+/**
  * Wrapper around dockerode with Workbench-specific operations.
  */
 export class DockerClient {
@@ -26,7 +36,7 @@ export class DockerClient {
 
   constructor(options: DockerClientOptions = {}) {
     this.docker = new Dockerode({
-      socketPath: options.socketPath ?? '/var/run/docker.sock',
+      socketPath: options.socketPath ?? getDefaultSocketPath(),
     });
   }
 

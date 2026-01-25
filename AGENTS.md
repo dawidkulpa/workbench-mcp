@@ -42,9 +42,9 @@ Refer to these for details (load only when needed):
 - `agent_docs/resources.md`: External references and documentation
 
 ## Current State (Update This!)
-**Last Updated:** 2026-01-24  
-**Working On:** Phase 2 Complete  
-**Recently Completed:** Phase 2 Docker Integration  
+**Last Updated:** 2026-01-25  
+**Working On:** Phase 3 Complete  
+**Recently Completed:** Phase 3 Proxy & Networking  
 **Blocked By:** None
 
 ---
@@ -68,12 +68,12 @@ Refer to these for details (load only when needed):
 - [x] Implement `sandbox.fs.read`, `sandbox.fs.write`, `sandbox.fs.list` tools
 - [x] Integration test harness (docker-compose based)
 
-### Phase 3: Proxy & Networking (Week 3)
-- [ ] Create proxy sidecar container
-- [ ] Implement per-session isolated Docker network
-- [ ] Implement allowlist enforcement in proxy
-- [ ] Create SDK `fetch` helper for sandbox
-- [ ] Test: sandbox offline, proxy allowed
+### Phase 3: Proxy & Networking (Week 3) ✅
+- [x] Create proxy sidecar container
+- [x] Implement per-session isolated Docker network
+- [x] Implement allowlist enforcement in proxy
+- [x] Create SDK `fetch` helper for sandbox
+- [x] Test: sandbox offline, proxy allowed
 
 ### Phase 4: Lifecycle & Cleanup (Week 4)
 - [ ] Implement idle timeout reaper (default 10 min)
