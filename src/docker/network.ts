@@ -27,6 +27,11 @@ export async function createSessionNetwork(
       try {
         await network.remove();
       } catch (error) {
+        // Ignore 404 (not found) and 409 (removal in progress) errors
+        const statusCode = (error as { statusCode?: number }).statusCode;
+        if (statusCode === 404 || statusCode === 409) {
+          return;
+        }
         const err = error instanceof Error ? error : new Error(String(error));
         throw new DockerError(`Failed to destroy network: ${networkName}`, err);
       }

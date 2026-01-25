@@ -103,6 +103,7 @@ Routes → Services → Docker/External
 - Do NOT use deprecated libraries or patterns
 - Do NOT apologize for errors—fix them immediately
 - Do NOT generate filler text before solutions
+- Do NOT add admin instructions to `toolbelt/` files — these are SDK docs for **agents inside the sandbox**, not for administrators configuring the host
 
 ## Code Style Quick Reference
 

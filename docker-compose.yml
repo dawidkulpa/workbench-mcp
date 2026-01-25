@@ -14,9 +14,11 @@ services:
       - WORKBENCH_MAX_SESSIONS=5
       - WORKBENCH_IDLE_TIMEOUT_MIN=10
       - WORKBENCH_SANDBOX_IMAGE=workbench-sandbox:1.0
+      - WORKBENCH_PROXY_IMAGE=workbench-proxy:1.0
       - WORKBENCH_SANDBOX_CPU=0.5
       - WORKBENCH_SANDBOX_MEM=512m
       - WORKBENCH_EXEC_TIMEOUT_MS=60000
+      - WORKBENCH_FETCH_ALLOWLIST=
       - NODE_ENV=development
     volumes:
       # Mount Docker socket to manage containers
@@ -28,6 +30,8 @@ services:
     depends_on:
       sandbox-image:
         condition: service_completed_successfully
+      proxy-image:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   # Build sandbox image before starting workbench
@@ -38,5 +42,14 @@ services:
     image: workbench-sandbox:1.0
     command: ["echo", "Sandbox image built successfully"]
 
+  # Build proxy image before starting workbench
+  proxy-image:
+    build:
+      context: ./containers/proxy
+      dockerfile: Dockerfile
+    image: workbench-proxy:1.0
+    command: ["echo", "Proxy image built successfully"]
+
 volumes:
   workbench-data:
+

@@ -12,6 +12,18 @@ services:
       - test-network
     command: ["tail", "-f", "/dev/null"]
 
+  # Test proxy image
+  proxy:
+    build:
+      context: ../../../containers/proxy
+      dockerfile: Dockerfile
+    image: workbench-proxy:test
+    networks:
+      - test-network
+    environment:
+      - PROXY_PORT=3128
+      - PROXY_ALLOWLIST=httpbin.org,*.httpbin.org
+
 networks:
   test-network:
     driver: bridge

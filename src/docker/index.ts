@@ -3,6 +3,7 @@
  */
 export { DockerClient, createDockerClient, type DockerClientOptions } from './client.js';
 export { createSandbox, getSandboxName, waitForContainer } from './sandbox.js';
+export { createProxy, getProxyName, getProxyPort } from './proxy.js';
 export { createSessionNetwork, getNetworkById, getNetworkName, waitForNetwork } from './network.js';
 export { readFileInContainer, writeFileInContainer, listDirInContainer } from './fs.js';
 export {
