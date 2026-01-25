@@ -9,6 +9,7 @@ import { loadConfig, type Config } from './config/env.js';
 import { SessionManager } from './session/manager.js';
 import { McpTransport } from './mcp/transport.js';
 import { WorkbenchError } from './errors.js';
+import { createLifecycleManager } from './lifecycle/index.js';
 
 // Define the server type we're using
 type AppFastifyInstance = FastifyInstance<Server, IncomingMessage, ServerResponse>;
@@ -42,6 +43,13 @@ export async function createServer(config?: Config): Promise<AppFastifyInstance>
 
   // Create session manager
   const sessionManager = new SessionManager(resolvedConfig);
+
+  // Create lifecycle manager (reaper, orphan cleanup)
+  const lifecycleManager = createLifecycleManager(sessionManager, resolvedConfig, {
+    info: (msg: string) => fastify.log.info(msg),
+    error: (msg: string) => fastify.log.error(msg),
+    debug: (msg: string) => fastify.log.debug(msg),
+  });
 
   // Create MCP transport and register routes
   const mcpTransport = new McpTransport(sessionManager);
@@ -78,13 +86,16 @@ export async function createServer(config?: Config): Promise<AppFastifyInstance>
 
   // Graceful shutdown hook
   fastify.addHook('onClose', async () => {
+    fastify.log.info('Stopping lifecycle manager...');
+    lifecycleManager.shutdown();
     fastify.log.info('Shutting down session manager...');
     await sessionManager.shutdown();
   });
 
-  // Store config and session manager on fastify instance for access
+  // Store config, session manager, and lifecycle manager on fastify instance
   fastify.decorate('config', resolvedConfig);
   fastify.decorate('sessionManager', sessionManager);
+  fastify.decorate('lifecycleManager', lifecycleManager);
 
   return fastify;
 }
@@ -94,5 +105,6 @@ declare module 'fastify' {
   interface FastifyInstance {
     config: Config;
     sessionManager: SessionManager;
+    lifecycleManager: ReturnType<typeof createLifecycleManager>;
   }
 }

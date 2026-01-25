@@ -6,6 +6,14 @@ async function main(): Promise<void> {
   const server = await createServer(config);
 
   try {
+    // Run startup tasks (orphan cleanup, start reaper)
+    const startupResult = await server.lifecycleManager.startup();
+    if (startupResult.orphansRemoved.containers > 0 || startupResult.orphansRemoved.networks > 0) {
+      server.log.info(
+        `Startup cleanup: removed ${startupResult.orphansRemoved.containers} orphaned containers, ${startupResult.orphansRemoved.networks} networks`,
+      );
+    }
+
     await server.listen({
       port: config.server.port,
       host: '0.0.0.0',

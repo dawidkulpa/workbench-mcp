@@ -43,8 +43,8 @@ Refer to these for details (load only when needed):
 
 ## Current State (Update This!)
 **Last Updated:** 2026-01-25  
-**Working On:** Phase 3 Complete  
-**Recently Completed:** Phase 3 Proxy & Networking  
+**Working On:** Phase 4 Complete  
+**Recently Completed:** Phase 4 Lifecycle & Cleanup  
 **Blocked By:** None
 
 ---
@@ -75,11 +75,11 @@ Refer to these for details (load only when needed):
 - [x] Create SDK `fetch` helper for sandbox
 - [x] Test: sandbox offline, proxy allowed
 
-### Phase 4: Lifecycle & Cleanup (Week 4)
-- [ ] Implement idle timeout reaper (default 10 min)
-- [ ] Implement startup orphan cleanup
-- [ ] Apply resource limits (CPU/RAM per sandbox)
-- [ ] Implement max sessions (5) with rejection logic
+### Phase 4: Lifecycle & Cleanup (Week 4) ✅
+- [x] Implement idle timeout reaper (default 10 min)
+- [x] Implement startup orphan cleanup
+- [x] Apply resource limits (CPU/RAM per sandbox)
+- [x] Implement max sessions (5) with rejection logic
 
 ### Phase 5: Observability & Hardening (Weeks 5-6)
 - [ ] Implement JSONL audit logging

@@ -15,6 +15,8 @@ export default defineConfig({
     },
     testTimeout: 10000,
     hookTimeout: 10000,
+    // Run integration tests sequentially to avoid Docker resource conflicts
+    fileParallelism: !process.env.RUN_INTEGRATION_TESTS,
   },
   resolve: {
     alias: {
