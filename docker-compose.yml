@@ -1,0 +1,42 @@
+# Docker Compose for Workbench MCP Development
+# Usage: docker compose up -d
+
+services:
+  workbench:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - WORKBENCH_PORT=3000
+      - WORKBENCH_LOG_LEVEL=debug
+      - WORKBENCH_MAX_SESSIONS=5
+      - WORKBENCH_IDLE_TIMEOUT_MIN=10
+      - WORKBENCH_SANDBOX_IMAGE=workbench-sandbox:1.0
+      - WORKBENCH_SANDBOX_CPU=0.5
+      - WORKBENCH_SANDBOX_MEM=512m
+      - WORKBENCH_EXEC_TIMEOUT_MS=60000
+      - NODE_ENV=development
+    volumes:
+      # Mount Docker socket to manage containers
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Mount toolbelt for hot-reload during dev
+      - ./toolbelt:/toolbelt:ro
+      # Mount data for audit logs
+      - workbench-data:/data
+    depends_on:
+      sandbox-image:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # Build sandbox image before starting workbench
+  sandbox-image:
+    build:
+      context: ./containers/sandbox
+      dockerfile: Dockerfile
+    image: workbench-sandbox:1.0
+    command: ["echo", "Sandbox image built successfully"]
+
+volumes:
+  workbench-data:
