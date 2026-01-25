@@ -90,18 +90,40 @@ function createProxyWrapper(
     async destroy(): Promise<void> {
       try {
         await container.stop({ t: 5 });
-      } catch {
-        // Container might already be stopped
+      } catch (error: unknown) {
+        handleProxyCleanupError(error, 'Failed to stop proxy container');
       }
       try {
         await container.remove({ force: true });
-      } catch {
-        // Ignore cleanup errors
+      } catch (error: unknown) {
+        handleProxyCleanupError(error, 'Failed to remove proxy container');
       }
     },
   };
 }
 
+function isDockerHttpError(error: unknown): error is { statusCode?: number } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'statusCode' in error &&
+    (typeof (error as { statusCode?: number }).statusCode === 'number' ||
+      typeof (error as { statusCode?: number }).statusCode === 'undefined')
+  );
+}
+
+function handleProxyCleanupError(error: unknown, message: string): void {
+  if (isDockerHttpError(error)) {
+    const statusCode = error.statusCode;
+    if (statusCode === 404 || statusCode === 409) {
+      // Container already gone or in a conflicting state; ignore as benign.
+      return;
+    }
+  }
+
+  const err = error instanceof Error ? error : new Error(String(error));
+  throw new DockerError(message, err);
+}
 /**
  * Wait for proxy container to be healthy (ready to accept requests).
  */

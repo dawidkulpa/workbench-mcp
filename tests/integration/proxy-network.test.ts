@@ -141,7 +141,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Proxy & Network Integration
     );
 
     it(
-      'should sandbox cannot access external internet directly',
+      'should verify sandbox cannot access external internet directly',
       async () => {
         const network = await createSessionNetwork(dockerClient, {
           conversationId: 'test-no-internet',
@@ -271,7 +271,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Proxy & Network Integration
     );
 
     it(
-      'should sandbox can connect to proxy health endpoint',
+      'should verify sandbox can connect to proxy health endpoint',
       async () => {
         const network = await createSessionNetwork(dockerClient, {
           conversationId: 'test-comm-health',
