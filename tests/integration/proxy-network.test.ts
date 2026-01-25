@@ -176,7 +176,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Proxy & Network Integration
     );
 
     it(
-      'should sandbox cannot resolve external DNS',
+      'should verify sandbox cannot resolve external DNS',
       async () => {
         const network = await createSessionNetwork(dockerClient, {
           conversationId: 'test-no-dns',
@@ -213,7 +213,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Proxy & Network Integration
 
   describe('Sandbox-Proxy Communication', () => {
     it(
-      'should sandbox can reach proxy via hostname',
+      'should verify sandbox can reach proxy via hostname',
       async () => {
         const network = await createSessionNetwork(dockerClient, {
           conversationId: 'test-comm-hostname',
@@ -326,7 +326,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Proxy & Network Integration
 
   describe('Allowlist Enforcement', () => {
     it(
-      'should proxy blocks requests to non-allowlisted URLs',
+      'should verify proxy blocks requests to non-allowlisted URLs',
       async () => {
         const network = await createSessionNetwork(dockerClient, {
           conversationId: 'test-allowlist-block',
@@ -383,7 +383,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Proxy & Network Integration
     );
 
     it(
-      'should proxy returns 400 for missing X-Target-URL',
+      'should verify proxy returns 400 for missing X-Target-URL',
       async () => {
         const network = await createSessionNetwork(dockerClient, {
           conversationId: 'test-allowlist-400',
