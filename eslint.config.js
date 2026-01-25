@@ -49,6 +49,6 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', 'coverage/', '*.js', '*.cjs'],
+    ignores: ['dist/', 'node_modules/', 'coverage/', '*.js', '*.cjs', 'containers/', 'toolbelt/'],
   },
 );
