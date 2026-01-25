@@ -38,7 +38,8 @@ const noopLogger: ReaperLogger = {
 export class SessionReaper {
   private timer: ReturnType<typeof setInterval> | null = null;
   private readonly logger: ReaperLogger;
-  private isRunning = false;
+  /** Tracks if a reap cycle is currently in progress (prevents overlapping) */
+  private isReaping = false;
 
   constructor(
     private readonly sessionManager: SessionManager,
@@ -88,12 +89,12 @@ export class SessionReaper {
    */
   async reap(): Promise<number> {
     // Prevent overlapping reap cycles
-    if (this.isRunning) {
+    if (this.isReaping) {
       this.logger.debug('Reap cycle already in progress, skipping');
       return 0;
     }
 
-    this.isRunning = true;
+    this.isReaping = true;
     let destroyedCount = 0;
 
     try {
@@ -121,7 +122,7 @@ export class SessionReaper {
 
       return destroyedCount;
     } finally {
-      this.isRunning = false;
+      this.isReaping = false;
     }
   }
 }
