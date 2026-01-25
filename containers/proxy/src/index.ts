@@ -207,8 +207,9 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   // Validate URL format
   try {
     new URL(targetUrl);
-  } catch {
-    sendError(res, 400, `Invalid target URL: ${targetUrl}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown URL parsing error';
+    sendError(res, 400, `Invalid target URL "${targetUrl}": ${errorMessage}`);
     logRequest(method, targetUrl, false, 400, Date.now() - startTime);
     return;
   }

@@ -312,8 +312,13 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Proxy & Network Integration
           });
 
           expect(result.exitCode).toBe(0);
-          const health = JSON.parse(result.stdout.trim()) as { status: string };
-          expect(health.status).toBe('ok');
+          const health: unknown = JSON.parse(result.stdout.trim());
+          expect(
+            typeof health === 'object' &&
+              health !== null &&
+              'status' in health &&
+              (health as { status: unknown }).status === 'ok',
+          ).toBe(true);
         } finally {
           if (sandbox) await sandbox.destroy();
           if (proxy) await proxy.destroy();

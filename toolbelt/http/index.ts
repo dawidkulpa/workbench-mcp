@@ -91,8 +91,8 @@ export async function proxyFetch(url: string, init?: RequestInit): Promise<Respo
     const errorBody = await response.text();
     let message: string;
     try {
-      const parsed = JSON.parse(errorBody) as { error?: string };
-      message = parsed.error ?? errorBody;
+      const parsed: unknown = JSON.parse(errorBody);
+      message = isProxyErrorResponse(parsed) ? parsed.error : errorBody;
     } catch {
       message = errorBody;
     }
@@ -100,6 +100,18 @@ export async function proxyFetch(url: string, init?: RequestInit): Promise<Respo
   }
 
   return response;
+}
+
+/**
+ * Type guard for proxy error response.
+ */
+function isProxyErrorResponse(value: unknown): value is { error: string } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'error' in value &&
+    typeof (value as { error: unknown }).error === 'string'
+  );
 }
 
 /**
