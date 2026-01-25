@@ -6,11 +6,11 @@
 |-------|------------|---------|---------|
 | Runtime | Node.js | 20 LTS | Server runtime |
 | Language | TypeScript | 5.x | Type-safe development |
-| HTTP Framework | Fastify | 4.x | High-performance HTTP server |
-| Docker SDK | dockerode | latest | Docker Engine API client |
-| Validation | Zod | 3.x | Runtime schema validation |
-| Logging | pino | 8.x | Structured logging |
-| Testing | Vitest | 1.x | Unit and integration tests |
+| HTTP Framework | Fastify | 5.x | High-performance HTTP server |
+| Docker SDK | dockerode | 4.x | Docker Engine API client |
+| Validation | Zod | 4.x | Runtime schema validation |
+| Logging | pino | 10.x | Structured logging |
+| Testing | Vitest | 4.x | Unit and integration tests |
 
 ## Project Structure
 
@@ -100,23 +100,22 @@ WORKBENCH_FETCH_ALLOWLIST=http://homeassistant.local:8123,http://192.168.10.16:9
 ```json
 {
   "dependencies": {
-    "fastify": "^4.x",
+    "fastify": "^5.x",
     "dockerode": "^4.x",
-    "zod": "^3.x",
-    "pino": "^8.x",
-    "pino-pretty": "^10.x"
+    "zod": "^4.x",
+    "pino": "^10.x",
+    "pino-pretty": "^13.x"
   },
   "devDependencies": {
     "typescript": "^5.x",
-    "vitest": "^1.x",
-    "@types/node": "^20.x",
-    "@types/dockerode": "^3.x",
-    "eslint": "^8.x",
-    "@typescript-eslint/eslint-plugin": "^6.x",
-    "@typescript-eslint/parser": "^6.x",
+    "vitest": "^4.x",
+    "@types/node": "^22.x",
+    "@types/dockerode": "^4.x",
+    "eslint": "^9.x",
+    "typescript-eslint": "^8.x",
     "prettier": "^3.x",
     "husky": "^9.x",
-    "lint-staged": "^15.x"
+    "lint-staged": "^16.x"
   }
 }
 ```
@@ -128,7 +127,7 @@ WORKBENCH_FETCH_ALLOWLIST=http://homeassistant.local:8123,http://192.168.10.16:9
 npm init -y
 npm install fastify dockerode zod pino pino-pretty
 npm install -D typescript vitest @types/node @types/dockerode \
-  eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser \
+  eslint typescript-eslint \
   prettier husky lint-staged
 
 # TypeScript config
