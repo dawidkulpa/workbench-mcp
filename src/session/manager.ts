@@ -1,7 +1,183 @@
 import { Mutex } from '../utils/mutex.js';
-import { MaxSessionsError, SessionNotFoundError } from '../errors.js';
+import { MaxSessionsError, SessionNotFoundError, DockerError } from '../errors.js';
 import type { Session, SessionMetadata } from './types.js';
 import type { Config } from '../config/env.js';
+import {
+  DockerClient,
+  createDockerClient,
+  createSandbox,
+  createSessionNetwork,
+  type SandboxContainer,
+  type DockerNetwork,
+} from '../docker/index.js';
+
+/**
+ * Session factory interface for creating sessions.
+ * Allows mocking in tests.
+ */
+export interface SessionFactory {
+  create(conversationId: string, config: Config): Promise<Session>;
+}
+
+/**
+ * Default session factory that creates real Docker containers.
+ */
+export class DockerSessionFactory implements SessionFactory {
+  private dockerClient: DockerClient;
+
+  constructor(dockerClient?: DockerClient) {
+    this.dockerClient = dockerClient ?? createDockerClient();
+  }
+
+  async create(conversationId: string, config: Config): Promise<Session> {
+    let network: DockerNetwork | undefined;
+    let sandbox: SandboxContainer | undefined;
+
+    try {
+      // Create isolated network
+      network = await createSessionNetwork(this.dockerClient, { conversationId });
+
+      // Create sandbox container
+      sandbox = await createSandbox(this.dockerClient, {
+        conversationId,
+        image: config.docker.sandboxImage,
+        networkId: network.id,
+        cpuLimit: config.docker.sandboxCpu,
+        memoryLimit: config.docker.sandboxMem,
+        ...(config.docker.toolbeltHostPath && {
+          toolbeltHostPath: config.docker.toolbeltHostPath,
+        }),
+      });
+
+      const now = Date.now();
+      let lastActivityAt = now;
+
+      const session: Session = {
+        conversationId,
+        createdAt: now,
+        get lastActivityAt() {
+          return lastActivityAt;
+        },
+        sandbox,
+        // Proxy will be added in Phase 3
+        proxy: {
+          containerId: '',
+        },
+        network,
+        touch() {
+          lastActivityAt = Date.now();
+        },
+        async destroy() {
+          // Destroy sandbox first
+          try {
+            await sandbox?.destroy();
+          } catch {
+            // Continue with network cleanup even if sandbox destroy fails
+          }
+          // Then destroy network
+          try {
+            await network?.destroy();
+          } catch {
+            // Network cleanup failure is not critical
+          }
+        },
+      };
+
+      return session;
+    } catch (error) {
+      // Cleanup on failure
+      if (sandbox) {
+        try {
+          await sandbox.destroy();
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
+      if (network) {
+        try {
+          await network.destroy();
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
+
+      if (error instanceof DockerError) {
+        throw error;
+      }
+      const err = error instanceof Error ? error : new Error(String(error));
+      throw new DockerError('Failed to create session', err);
+    }
+  }
+
+  /**
+   * Get the Docker client for advanced operations.
+   */
+  getDockerClient(): DockerClient {
+    return this.dockerClient;
+  }
+}
+
+/**
+ * Mock session factory for unit testing.
+ */
+export class MockSessionFactory implements SessionFactory {
+  create(conversationId: string, _config: Config): Promise<Session> {
+    const now = Date.now();
+    let lastActivityAt = now;
+
+    // Create mock sandbox
+    const mockSandbox: SandboxContainer = {
+      containerId: `sandbox-${conversationId}`,
+      container: {} as SandboxContainer['container'],
+      exec() {
+        return Promise.resolve({ stdout: '', stderr: '', exitCode: 0 });
+      },
+      readFile() {
+        return Promise.resolve('');
+      },
+      writeFile() {
+        return Promise.resolve();
+      },
+      listDir() {
+        return Promise.resolve([]);
+      },
+      destroy() {
+        return Promise.resolve();
+      },
+    };
+
+    // Create mock network
+    const mockNetwork: DockerNetwork = {
+      id: `network-${conversationId}`,
+      name: `workbench-${conversationId}`,
+      network: {} as DockerNetwork['network'],
+      destroy() {
+        return Promise.resolve();
+      },
+    };
+
+    const session: Session = {
+      conversationId,
+      createdAt: now,
+      get lastActivityAt() {
+        return lastActivityAt;
+      },
+      sandbox: mockSandbox,
+      proxy: {
+        containerId: `proxy-${conversationId}`,
+      },
+      network: mockNetwork,
+      touch() {
+        lastActivityAt = Date.now();
+      },
+      destroy() {
+        return Promise.resolve();
+      },
+    };
+
+    return Promise.resolve(session);
+  }
+}
 
 /**
  * Manages session lifecycle with concurrency control.
@@ -10,8 +186,17 @@ import type { Config } from '../config/env.js';
 export class SessionManager {
   private sessions = new Map<string, Session>();
   private locks = new Map<string, Mutex>();
+  private sessionFactory: SessionFactory;
 
-  constructor(private readonly config: Config) {}
+  constructor(
+    private readonly config: Config,
+    sessionFactory?: SessionFactory,
+  ) {
+    // Use mock factory in test environment, Docker factory otherwise
+    this.sessionFactory =
+      sessionFactory ??
+      (config.env === 'test' ? new MockSessionFactory() : new DockerSessionFactory());
+  }
 
   /**
    * Get or create a session for the given conversation ID.
@@ -28,7 +213,7 @@ export class SessionManager {
         if (this.sessions.size >= this.config.session.maxSessions) {
           throw new MaxSessionsError(this.config.session.maxSessions);
         }
-        session = this.createSession(conversationId);
+        session = await this.sessionFactory.create(conversationId, this.config);
         this.sessions.set(conversationId, session);
       }
       session.touch();
@@ -132,42 +317,5 @@ export class SessionManager {
       this.locks.set(conversationId, mutex);
     }
     return mutex;
-  }
-
-  /**
-   * Create a new session. This is a placeholder that will be implemented
-   * in Phase 2 when Docker integration is added.
-   */
-  private createSession(conversationId: string): Session {
-    // TODO: Implement in Phase 2 with Docker integration
-    // For now, create a mock session for testing the manager
-    const now = Date.now();
-    let lastActivityAt = now;
-
-    const session: Session = {
-      conversationId,
-      createdAt: now,
-      get lastActivityAt() {
-        return lastActivityAt;
-      },
-      sandbox: {
-        containerId: `sandbox-${conversationId}`,
-      },
-      proxy: {
-        containerId: `proxy-${conversationId}`,
-      },
-      network: {
-        id: `network-${conversationId}`,
-        name: `workbench-${conversationId}`,
-      },
-      touch() {
-        lastActivityAt = Date.now();
-      },
-      async destroy() {
-        // TODO: Implement container cleanup in Phase 2
-      },
-    };
-
-    return session;
   }
 }

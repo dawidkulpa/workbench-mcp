@@ -10,6 +10,8 @@ import {
 } from './schemas.js';
 import { MissingConversationIdError, WorkbenchError } from '../errors.js';
 import type { SessionManager } from '../session/manager.js';
+import type { Session } from '../session/types.js';
+import { toolRegistry, executeTool } from './tools/index.js';
 
 /**
  * MCP Streamable HTTP transport handler.
@@ -71,7 +73,7 @@ export class McpTransport {
 
     // Route to appropriate handler based on method
     try {
-      const result = this.routeMethod(jsonRpcRequest, session);
+      const result = await this.routeMethod(jsonRpcRequest, session);
       return reply.send(createSuccessResponse(jsonRpcRequest.id, result));
     } catch (error) {
       if (error instanceof WorkbenchError) {
@@ -88,7 +90,7 @@ export class McpTransport {
   /**
    * Route MCP method to appropriate handler.
    */
-  private routeMethod(request: JsonRpcRequest, _session: unknown): unknown {
+  private async routeMethod(request: JsonRpcRequest, session: Session): Promise<unknown> {
     switch (request.method) {
       case 'initialize':
         return this.handleInitialize();
@@ -97,7 +99,7 @@ export class McpTransport {
         return this.handleToolsList();
 
       case 'tools/call':
-        return this.handleToolsCall(request.params);
+        return this.handleToolsCall(request.params, session);
 
       default:
         throw new WorkbenchError(`Method not found: ${request.method}`, 'METHOD_NOT_FOUND', 404);
@@ -124,82 +126,27 @@ export class McpTransport {
    * Handle tools/list request.
    */
   private handleToolsList(): object {
-    // TODO: Implement in Phase 2 with actual tools
     return {
-      tools: [
-        {
-          name: 'sandbox.exec',
-          description: 'Execute a command in the sandbox container',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              command: { type: 'string', description: 'Command to execute' },
-              args: {
-                type: 'array',
-                items: { type: 'string' },
-                description: 'Command arguments',
-              },
-              cwd: { type: 'string', description: 'Working directory' },
-              timeoutMs: { type: 'number', description: 'Execution timeout in milliseconds' },
-            },
-            required: ['command'],
-          },
-        },
-        {
-          name: 'sandbox.fs.read',
-          description: 'Read a file from the sandbox workspace',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              path: { type: 'string', description: 'Path to the file (relative to /workspace)' },
-            },
-            required: ['path'],
-          },
-        },
-        {
-          name: 'sandbox.fs.write',
-          description: 'Write a file to the sandbox workspace',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              path: { type: 'string', description: 'Path to the file (relative to /workspace)' },
-              content: { type: 'string', description: 'File content' },
-            },
-            required: ['path', 'content'],
-          },
-        },
-        {
-          name: 'sandbox.fs.list',
-          description: 'List files in a directory in the sandbox workspace',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              path: {
-                type: 'string',
-                description: 'Path to the directory (relative to /workspace)',
-              },
-            },
-            required: ['path'],
-          },
-        },
-      ],
+      tools: toolRegistry.listTools(),
     };
   }
 
   /**
    * Handle tools/call request.
    */
-  private handleToolsCall(params: unknown): object {
-    // TODO: Implement in Phase 2 with actual tool execution
+  private async handleToolsCall(params: unknown, session: Session): Promise<object> {
     const typedParams = params as { name?: string; arguments?: unknown } | undefined;
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Tool ${typedParams?.name ?? 'unknown'} will be implemented in Phase 2`,
-        },
-      ],
-    };
+    const toolName = typedParams?.name;
+
+    if (!toolName) {
+      throw new WorkbenchError('Tool name is required', 'INVALID_PARAMS', 400);
+    }
+
+    if (!toolRegistry.has(toolName)) {
+      throw new WorkbenchError(`Tool not found: ${toolName}`, 'TOOL_NOT_FOUND', 404);
+    }
+
+    return executeTool(toolName, session, typedParams?.arguments ?? {});
   }
 
   /**

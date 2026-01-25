@@ -1,6 +1,7 @@
 /**
  * Session type definitions.
  */
+import type { SandboxContainer, DockerNetwork } from '../docker/types.js';
 
 /**
  * Represents a single sandbox session tied to a conversation.
@@ -12,19 +13,14 @@ export interface Session {
   createdAt: number;
   /** Timestamp of last activity (for idle timeout) */
   lastActivityAt: number;
-  /** Sandbox container information */
-  sandbox: {
-    containerId: string;
-  };
-  /** Proxy sidecar container information */
+  /** Sandbox container wrapper */
+  sandbox: SandboxContainer;
+  /** Proxy sidecar container information (placeholder for Phase 3) */
   proxy: {
     containerId: string;
   };
   /** Docker network for session isolation */
-  network: {
-    id: string;
-    name: string;
-  };
+  network: DockerNetwork;
   /** Update lastActivityAt to current time */
   touch(): void;
   /** Destroy the session and clean up resources */

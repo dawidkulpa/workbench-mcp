@@ -43,8 +43,8 @@ Refer to these for details (load only when needed):
 
 ## Current State (Update This!)
 **Last Updated:** 2026-01-24  
-**Working On:** Phase 1 Complete  
-**Recently Completed:** Phase 1 Foundation  
+**Working On:** Phase 2 Complete  
+**Recently Completed:** Phase 2 Docker Integration  
 **Blocked By:** None
 
 ---
@@ -60,13 +60,13 @@ Refer to these for details (load only when needed):
 - [x] Implement session map with concurrency locking
 - [x] GitHub Actions CI baseline (lint + typecheck + unit tests)
 
-### Phase 2: Docker Integration (Week 2)
-- [ ] Implement Docker manager with dockerode
-- [ ] Create sandbox container lifecycle (create, start, destroy)
-- [ ] Implement workspace seeding from `/template`
-- [ ] Implement `sandbox.exec` tool with dockerode exec
-- [ ] Implement `sandbox.fs.read`, `sandbox.fs.write`, `sandbox.fs.list` tools
-- [ ] Integration test harness (docker-compose based)
+### Phase 2: Docker Integration (Week 2) ✅
+- [x] Implement Docker manager with dockerode
+- [x] Create sandbox container lifecycle (create, start, destroy)
+- [x] Implement workspace seeding from `/template`
+- [x] Implement `sandbox.exec` tool with dockerode exec
+- [x] Implement `sandbox.fs.read`, `sandbox.fs.write`, `sandbox.fs.list` tools
+- [x] Integration test harness (docker-compose based)
 
 ### Phase 3: Proxy & Networking (Week 3)
 - [ ] Create proxy sidecar container
