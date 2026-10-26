@@ -317,7 +317,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Proxy & Network Integration
             typeof health === 'object' &&
               health !== null &&
               'status' in health &&
-              (health as { status: unknown }).status === 'ok',
+              health.status === 'ok',
           ).toBe(true);
         } finally {
           if (sandbox) await sandbox.destroy();
