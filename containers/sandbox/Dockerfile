@@ -1,7 +1,7 @@
 # Sandbox Container for Workbench MCP
 # Provides a secure, isolated TypeScript execution environment
 
-FROM node:20-alpine
+FROM node:24-alpine
 
 # Install additional tools
 RUN apk add --no-cache \
